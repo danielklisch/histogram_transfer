@@ -1,0 +1,23 @@
+.column {
+  float: left;
+  width: 34%;
+}
+
+/* Clear floats after the columns */
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+#container_content {
+  transform-origin: 0 0;
+}
+
+#container_histogram {
+  transform-origin: 0 0;
+}
+
+#container_result {
+  transform-origin: 0 0;
+}

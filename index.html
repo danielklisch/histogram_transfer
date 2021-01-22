@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Histogram Transfer</title>
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+
+<body>
+<div class="row">
+    <div class="column">
+        <label>Content Source:</label><br />
+        <input type="file" id="image_loader_content"/><br />
+        <div id="container_content">
+            <canvas id="canvas_content"></canvas><br />
+        </div>
+        <div id="space_content" height="100px"></div>
+        <label>Histogram Source:</label><br />
+        <input type="file" id="image_loader_histogram"/><br />
+        <div id="container_histogram">
+            <canvas id="canvas_histogram"></canvas><br />
+        </div>
+        <div id="space_histogram" height="100px"></div>
+        
+        <button type="button" onclick="apply()">Apply</button> <label id="label_progress">ready</label> <br />        
+        
+        <label>Histogram Channel Order:</label><br/>
+        <div class="column" style="width:10%;">
+            <input type="radio" id="radio_rgb" name="order" value="rgb" checked="true">
+            <label>RGB</label><br/>
+        </div>
+        <div class="column" style="width:10%;">
+            <input type="radio" id="radio_rbg" name="order" value="rbg">
+            <label>RBG</label><br/>
+        </div>
+        <div class="column" style="width:10%;">
+            <input type="radio" id="radio_grb" name="order" value="grb">
+            <label>GRB</label><br/>
+        </div>
+        <div class="column" style="width:10%;">
+            <input type="radio" id="radio_gbr" name="order" value="gbr">
+            <label>GBR</label><br/>
+        </div>
+        <div class="column" style="width:10%;">
+            <input type="radio" id="radio_brg" name="order" value="brg">
+            <label>BRG</label><br/>
+        </div>
+        <div class="column" style="width:10%;">
+            <input type="radio" id="radio_bgr" name="order" value="bgr">
+            <label>BGR</label><br/>
+        </div>
+    </div>
+    <div class="column">
+        <br />
+        <br />
+        <label>Result:</label><br />
+        <div id="container_result">
+            <canvas id="canvas_result"></canvas><br />
+        </div>
+    </div>
+</div>
+</body>
+<script src="histogram_transfer.js"></script>
+<script>
+document.getElementById('image_loader_content').addEventListener('change', load_content, false);
+var image_content = 0
+var canvas_content = document.getElementById('canvas_content');
+var context_content = canvas_content.getContext('2d');
+document.getElementById('image_loader_histogram').addEventListener('change', load_histogram, false);
+var image_histogram = 0
+var canvas_histogram = document.getElementById('canvas_histogram');
+var context_histogram = canvas_histogram.getContext('2d');
+
+var canvas_result = document.getElementById('canvas_result');
+var context_result = canvas_result.getContext('2d');
+
+var calculator = 0;
+var channel_order = [0,1,2];
+
+function load_content(e){
+    var reader = new FileReader();
+    reader.onload = function(event){
+        var img = new Image();
+        img.onload = function(){
+            canvas_content.width = img.width;
+            canvas_content.height = img.height;
+            var scale_x = 0.33*window.screen.width/img.width;
+            var scale_y = 0.33*window.screen.height/img.height;
+            var scale = Math.min(scale_x,scale_y);
+            document.getElementById('container_content').style.transform = "matrix("+scale+", 0, 0, "+scale+", 0, 0)"; 
+            document.getElementById('container_content').style.width = Math.min(scale,1)*img.width+"px";
+            document.getElementById('container_content').style.height = Math.min(scale,1)*img.height+"px";
+            document.getElementById('space_content').style.height = Math.max(scale-1,0)*img.height+"px";
+            context_content.drawImage(img,0,0);
+            image_content = img;
+        }
+        img.src = event.target.result;
+    }
+    reader.readAsDataURL(e.target.files[0]);     
+}
+
+function load_histogram(e){
+    var reader = new FileReader();
+    reader.onload = function(event){
+        var img = new Image();
+        img.onload = function(){
+            canvas_histogram.width = img.width;
+            canvas_histogram.height = img.height;
+            var scale_x = 0.33*window.screen.width/img.width;
+            var scale_y = 0.33*window.screen.height/img.height;
+            var scale = Math.min(scale_x,scale_y);
+            document.getElementById('container_histogram').style.transform = "matrix("+scale+", 0, 0, "+scale+", 0, 0)"; 
+            document.getElementById('container_histogram').style.width = Math.min(scale,1)*img.width+"px";
+            document.getElementById('container_histogram').style.height = Math.min(scale,1)*img.height+"px";
+            document.getElementById('space_histogram').style.height = Math.max(scale-1,0)*img.height+"px";
+            context_histogram.drawImage(img,0,0);
+            image_histogram = img;
+        }
+        img.src = event.target.result;
+    }
+    reader.readAsDataURL(e.target.files[0]);     
+}
+
+function* calculate() {
+    var image_data_content = context_content.getImageData(0, 0, image_content.width, image_content.height);
+    var data_content = image_data_content.data;
+
+    var image_data_histogram = context_histogram.getImageData(0, 0, image_histogram.width, image_histogram.height);
+    var data_histogram = image_data_histogram.data;    
+
+    document.getElementById('label_progress').innerHTML = "building content histogram...";
+    yield;
+    histogram_content = make_histogram(data_content,image_content.width, image_content.height);
+    document.getElementById('label_progress').innerHTML = "building content cdfs...";
+    yield;
+    cdfs_content = make_cdfs(histogram_content);
+    document.getElementById('label_progress').innerHTML = "building target histogram...";
+    yield;
+    histogram_target = make_histogram(data_histogram,image_histogram.width, image_histogram.height);    
+    document.getElementById('label_progress').innerHTML = "transforming content...";
+    yield;
+    transform_image(data_content,image_content.width, image_content.height,cdfs_content,histogram_target);
+    
+    image_data_content.data = data_content;
+    context_result.putImageData(image_data_content, 0, 0);
+    document.getElementById('label_progress').innerHTML = "done";
+}
+
+function timeoutLoop() {
+    calculator.next();
+    if (document.getElementById('label_progress').innerHTML != "done") {
+        setTimeout(timeoutLoop, 100);
+    }
+}
+
+function apply() {
+    if (document.getElementById('label_progress').innerHTML == "ready" || document.getElementById('label_progress').innerHTML == "done") {
+        canvas_result.width = image_content.width;
+        canvas_result.height = image_content.height;   
+        var scale_x = 0.65*window.screen.width/image_content.width;
+        var scale_y = 0.65*window.screen.height/image_content.height;
+        var scale = Math.min(scale_x,scale_y);
+        document.getElementById('container_result').style.transform = "matrix("+scale+", 0, 0, "+scale+", 0, 0)"; 
+        document.getElementById('container_result').style.height = "0px";
+        //context_result.drawImage(image_content,0,0);    
+        
+        if (document.getElementById("radio_rgb").checked) channel_order = [0,1,2];
+        if (document.getElementById("radio_rbg").checked) channel_order = [0,2,1];
+        if (document.getElementById("radio_grb").checked) channel_order = [1,0,2];
+        if (document.getElementById("radio_gbr").checked) channel_order = [1,2,0];
+        if (document.getElementById("radio_brg").checked) channel_order = [2,0,1];
+        if (document.getElementById("radio_bgr").checked) channel_order = [2,1,0];
+        
+        calculator = calculate();
+        setTimeout(timeoutLoop, 100);
+    }
+}
+</script>
+</html>
