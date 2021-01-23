@@ -1,6 +1,6 @@
 # Histogram Transfer
 
-<img src='imgs/figure1.png'/>
+<img src='figures/figure1.png'/>
 
 Given two images A and B, Histogram Transfer will create a new image with the content from image A and the histogram from image B.
 
@@ -10,15 +10,15 @@ You can try out the web demo [here](https://danielklisch.github.io/histogram_tra
 
 Histogram Transfer can be used to change the look of textures while keeping the structure:
 
-<img src='imgs/figure2.png'/>
+<img src='figures/figure2.png'/>
 
-<img src='imgs/figure3.png'/>
+<img src='figures/figure3.png'/>
 
-<img src='imgs/figure4.png'/>
+<img src='figures/figure4.png'/>
 
-Histogram Transfer can also be used with more complicated images:
+Histogram Transfer can also be used with more complex images:
 
-<img src='imgs/figure5.png'/>
+<img src='figures/figure5.png'/>
 
 For the first examples textures from [shadertoy](https://www.shadertoy.com/view/tdSSzV) were used.
 The images of [earth](https://visibleearth.nasa.gov/images/57730/the-blue-marble-land-surface-ocean-color-and-sea-ice) and [mars](https://astrogeology.usgs.gov/search/map/Mars/Viking/Color/Mars_Viking_ClrMosaic_global_925m) came from NASA.
