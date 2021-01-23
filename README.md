@@ -25,6 +25,8 @@ The images of [earth](https://visibleearth.nasa.gov/images/57730/the-blue-marble
 
 ## How It Works
 
+<img src='figures/figure6.png'/>
+
 The cumulative distribution function cdf<sub>A</sub>(x) of a random variable A gives the probability that A is smaller or equal to x.
 Given a uniformly distributed random variable C between 0 and 1, the variable can be transformed to have the same distribution as A using the inverse cdf:
 
